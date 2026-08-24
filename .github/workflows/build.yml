@@ -1,0 +1,36 @@
+name: Build POLY1271 Windows EXE
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: STEP 1/5 - Checkout
+        uses: actions/checkout@v4
+
+      - name: STEP 2/5 - Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: STEP 3/5 - Clone Polymarket SDK
+        shell: pwsh
+        run: |
+          git clone https://github.com/Polymarket/rs-clob-client-v2.git sdk
+          cd sdk
+          git checkout 222143d
+          Write-Host "Pinned commit:"
+          git rev-parse HEAD
+
+      - name: STEP 4/5 - Build exact deposit-wallet example
+        shell: pwsh
+        run: |
+          cd sdk
+          cargo build --release --features clob --example gtc_limit_buy_deposit_wallet
+
+      - name: STEP 5/5 - Upload EXE
+        uses: actions/upload-artifact@v4
+        with:
+          name: poly1271-windows-exe
+          path: sdk/target/release/examples/gtc_limit_buy_deposit_wallet.exe
