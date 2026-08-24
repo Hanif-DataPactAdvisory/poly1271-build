@@ -1,36 +1,71 @@
-name: Build POLY1271 Windows EXE
+name: Inspect POLY1271 Implementation
 
 on:
   workflow_dispatch:
 
 jobs:
-  build:
+  inspect:
     runs-on: windows-latest
 
     steps:
-      - name: STEP 1/5 - Checkout
-        uses: actions/checkout@v4
-
-      - name: STEP 2/5 - Install Rust
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: STEP 3/5 - Clone Polymarket SDK
+      - name: STEP 1/4 - Clone current Polymarket Rust SDK
         shell: pwsh
         run: |
           git clone https://github.com/Polymarket/rs-clob-client-v2.git sdk
           cd sdk
-          git checkout 222143d
-          Write-Host "Pinned commit:"
           git rev-parse HEAD
+          git log -5 --oneline
 
-      - name: STEP 4/5 - Build exact deposit-wallet example
+      - name: STEP 2/4 - Show Poly1271 authentication implementation
         shell: pwsh
         run: |
           cd sdk
-          cargo build --release --features clob --example gtc_limit_buy_deposit_wallet
 
-      - name: STEP 5/5 - Upload EXE
-        uses: actions/upload-artifact@v4
-        with:
-          name: poly1271-windows-exe
-          path: sdk/target/release/examples/gtc_limit_buy_deposit_wallet.exe
+          Write-Host "===== SEARCH POLY1271 ====="
+          git grep -n "Poly1271" -- src/clob
+
+          Write-Host ""
+          Write-Host "===== SEARCH create_level_1_headers ====="
+          git grep -n "create_level_1_headers" -- src
+
+          Write-Host ""
+          Write-Host "===== SEARCH TypedDataSign ====="
+          git grep -n "TypedDataSign" -- src
+
+          Write-Host ""
+          Write-Host "===== SEARCH authentication_builder ====="
+          git grep -n "authentication_builder" -- src/clob
+
+      - name: STEP 3/4 - Show exact relevant source files
+        shell: pwsh
+        run: |
+          cd sdk
+
+          Write-Host "===== AUTH FILES ====="
+
+          Get-ChildItem src/clob -Recurse -File |
+            Where-Object {
+              $_.Name -match "auth|client|order|sign"
+            } |
+            ForEach-Object {
+              Write-Host $_.FullName
+            }
+
+          Write-Host ""
+          Write-Host "===== DEPOSIT WALLET EXAMPLE ====="
+
+          Get-Content `
+            .\examples\clob\orders\gtc_limit_buy_deposit_wallet.rs
+
+      - name: STEP 4/4 - VERIFY SDK BUILD
+        shell: pwsh
+        run: |
+          cd sdk
+
+          cargo check `
+            --features clob
+
+          Write-Host ""
+          Write-Host "========================================="
+          Write-Host "INSPECTION COMPLETE"
+          Write-Host "========================================="
