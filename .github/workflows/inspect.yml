@@ -1,0 +1,48 @@
+name: Inspect POLY1271 Implementation
+
+on:
+  workflow_dispatch:
+
+jobs:
+  inspect:
+    runs-on: windows-latest
+
+    steps:
+      - name: STEP 1/4 - Clone SDK
+        shell: pwsh
+        run: |
+          git clone https://github.com/Polymarket/rs-clob-client-v2.git sdk
+          cd sdk
+          git log -5 --oneline
+
+      - name: STEP 2/4 - Inspect Poly1271 code
+        shell: pwsh
+        run: |
+          cd sdk
+
+          Write-Host "===== SEARCH POLY1271 ====="
+          git grep -n "Poly1271" -- src
+
+          Write-Host ""
+          Write-Host "===== SEARCH TypedDataSign ====="
+          git grep -n "TypedDataSign" -- src
+
+          Write-Host ""
+          Write-Host "===== SEARCH authentication_builder ====="
+          git grep -n "authentication_builder" -- src
+
+          Write-Host ""
+          Write-Host "===== SEARCH create_level_1_headers ====="
+          git grep -n "create_level_1_headers" -- src
+
+      - name: STEP 3/4 - Show deposit wallet example
+        shell: pwsh
+        run: |
+          cd sdk
+          Get-Content .\examples\clob\orders\gtc_limit_buy_deposit_wallet.rs
+
+      - name: STEP 4/4 - Verify SDK
+        shell: pwsh
+        run: |
+          cd sdk
+          cargo check --features clob
