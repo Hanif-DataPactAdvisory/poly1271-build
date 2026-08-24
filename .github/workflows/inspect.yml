@@ -1,4 +1,4 @@
-name: Inspect POLY1271 Implementation
+name: Inspect Exact POLY1271 L1 Auth
 
 on:
   workflow_dispatch:
@@ -8,41 +8,57 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      - name: STEP 1/4 - Clone SDK
+      - name: STEP 1/5 - Clone SDK
         shell: pwsh
         run: |
           git clone https://github.com/Polymarket/rs-clob-client-v2.git sdk
           cd sdk
-          git log -5 --oneline
+          git log -1 --oneline
 
-      - name: STEP 2/4 - Inspect Poly1271 code
+      - name: STEP 2/5 - Find L1 auth implementation
         shell: pwsh
         run: |
           cd sdk
 
-          Write-Host "===== SEARCH POLY1271 ====="
-          git grep -n "Poly1271" -- src
+          Write-Host "===== ALL L1 AUTH FUNCTIONS ====="
+          git grep -n "async fn" -- src/auth.rs
+          git grep -n "fn create" -- src/auth.rs
 
           Write-Host ""
-          Write-Host "===== SEARCH TypedDataSign ====="
+          Write-Host "===== ClobAuth ====="
+          git grep -n "ClobAuth" -- src
+
+          Write-Host ""
+          Write-Host "===== TypedDataSign ====="
           git grep -n "TypedDataSign" -- src
 
-          Write-Host ""
-          Write-Host "===== SEARCH authentication_builder ====="
-          git grep -n "authentication_builder" -- src
-
-          Write-Host ""
-          Write-Host "===== SEARCH create_level_1_headers ====="
-          git grep -n "create_level_1_headers" -- src
-
-      - name: STEP 3/4 - Show deposit wallet example
+      - name: STEP 3/5 - Dump relevant auth source
         shell: pwsh
         run: |
           cd sdk
-          Get-Content .\examples\clob\orders\gtc_limit_buy_deposit_wallet.rs
 
-      - name: STEP 4/4 - Verify SDK
+          Write-Host "===== AUTH.RS ====="
+          Get-Content .\src\auth.rs
+
+      - name: STEP 4/5 - Dump client authentication section
+        shell: pwsh
+        run: |
+          cd sdk
+
+          Write-Host "===== CLIENT AUTHENTICATION ====="
+
+          $lines = Get-Content .\src\clob\client.rs
+
+          for ($i = 1450; $i -le 1650; $i++) {
+            if ($i -le $lines.Count) {
+              Write-Host ("{0}: {1}" -f $i, $lines[$i-1])
+            }
+          }
+
+      - name: STEP 5/5 - Verify
         shell: pwsh
         run: |
           cd sdk
           cargo check --features clob
+          Write-Host ""
+          Write-Host "INSPECTION COMPLETE"
