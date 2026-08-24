@@ -25,7 +25,7 @@ jobs:
       - name: Inject dry-run example
         shell: pwsh
         run: |
-          Copy-Item "\dryrun_poly1271.rs" "\sdk\examples\clob\orders\gtc_limit_buy_deposit_wallet.rs" -Force
+          Copy-Item "$env:GITHUB_WORKSPACE\dryrun_poly1271.rs" "$env:GITHUB_WORKSPACE\sdk\examples\clob\orders\gtc_limit_buy_deposit_wallet.rs" -Force
 
       - name: Build dry-run EXE
         shell: pwsh
