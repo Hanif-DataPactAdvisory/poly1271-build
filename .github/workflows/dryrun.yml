@@ -1,0 +1,40 @@
+name: Build Poly1271 Dry Run
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Clone exact official SDK
+        shell: pwsh
+        run: |
+          git clone https://github.com/Polymarket/rs-clob-client-v2.git sdk
+          cd sdk
+          git checkout 222143d321eba97d5711a848265eb9aab3bc7ff4
+          git rev-parse HEAD
+
+      - name: Inject dry-run example
+        shell: pwsh
+        run: |
+          Copy-Item "\dryrun_poly1271.rs" "\sdk\examples\clob\orders\gtc_limit_buy_deposit_wallet.rs" -Force
+
+      - name: Build dry-run EXE
+        shell: pwsh
+        run: |
+          cd sdk
+          cargo build --release --features clob --example gtc_limit_buy_deposit_wallet
+
+      - name: Upload dry-run EXE
+        uses: actions/upload-artifact@v4
+        with:
+          name: poly1271-dryrun-222143d
+          path: sdk/target/release/examples/gtc_limit_buy_deposit_wallet.exe
